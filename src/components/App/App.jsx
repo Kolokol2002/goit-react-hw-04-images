@@ -11,72 +11,42 @@ function App() {
   const [text, setText] = useState('');
   const [page, setPage] = useState(1);
   const [error, setError] = useState('');
-  const [status, setStatus] = useState('idle');
   const [ref, setRef] = useState(null);
-  // const [scrollTo, setScrollTo] = useState(null);
-
-  // componentDidUpdate(_, prevState) {
-  //   const { page, text, image, ref } = this.state;
-
-  //   if (page === 1) {
-  //     return;
-  //   }
-
-  //   if (prevState.image !== image) {
-  //     // console.log(1, page);
-  //     const elementToScroll =
-  //       ref.current.children[PER_PAGE * (prevState.page - 1)];
-
-  //     elementToScroll.scrollIntoView({
-  //       behavior: 'smooth',
-  //     });
-  //   }
-
-  //   if (prevState.page !== page) {
-  //     // console.log(2, page);
-  //     this.setState({ status: 'pending' });
-
-  //     getPhotoApi(text, page, PER_PAGE)
-  //       .then(({ data: { hits } }) => {
-  //         const status = hits.length < PER_PAGE ? 'idle' : 'resolved';
-  //         this.setState({
-  //           image: [...prevState.image, ...hits],
-  //           status,
-  //         });
-  //       })
-  //       .catch(error => this.setState({ error, status: 'rejected' }));
-  //   }
-  // }
-
-  // useEffect(() => {
-  //   const elementToScroll = ref.current.children[PER_PAGE * (page - 1)];
-
-  //   elementToScroll.scrollIntoView({
-  //     behavior: 'smooth',
-  //   });
-  // }, [image, ref, page]);
+  const [status, setStatus] = useState('idle');
 
   useEffect(() => {
     if (page === 1) {
       return;
     }
-    setStatus('pending');
 
-    getPhotoApi(text, page, PER_PAGE)
-      .then(({ data: { hits } }) => {
-        const status = hits.length < PER_PAGE ? 'idle' : 'resolved';
-        setImage([...image, ...hits]);
-        setStatus(status);
-      })
-      .catch(error => {
-        setError(error);
-        setStatus('rejected');
+    if (image.length === page * PER_PAGE) {
+      const elementToScroll = ref.current.children[PER_PAGE * (page - 1)];
+      elementToScroll.scrollIntoView({
+        behavior: 'smooth',
       });
-  }, [page, image, text]);
+    }
+  }, [ref, page, image]);
 
-  // useEffect(() => {}, []);
+  useEffect(() => {
+    if (page === 1) {
+      return;
+    }
 
-  // useEffect(() => {}, []);
+    if (image.length < page * PER_PAGE) {
+      setStatus('pending');
+
+      getPhotoApi(text, page, PER_PAGE)
+        .then(({ data: { hits } }) => {
+          const status = hits.length < PER_PAGE ? 'idle' : 'resolved';
+          setImage([...image, ...hits]);
+          setStatus(status);
+        })
+        .catch(error => {
+          setError(error);
+          setStatus('rejected');
+        });
+    }
+  }, [page, text, image]);
 
   const getRef = ref => {
     setRef(ref);
@@ -87,7 +57,7 @@ function App() {
     setStatus('pending');
     setPage(1);
 
-    getPhotoApi(text, 1, PER_PAGE)
+    getPhotoApi(text, page, PER_PAGE)
       .then(({ data: { hits } }) => {
         if (hits.length === 0) {
           throw new Error('Картинок не знайдено');
@@ -121,6 +91,7 @@ function App() {
 }
 
 export default App;
+
 // class App extends Component {
 //   state = {
 //     image: [],

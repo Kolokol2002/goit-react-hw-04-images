@@ -1,23 +1,18 @@
 import ImageGalleryItem from 'components/ImageGalleryItem';
 import { GalleryContainer } from './ImageGallery.styled';
 import Modal from 'components/Modal/Modal';
-import { createRef, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 function ImageGallery({ image, getRef }) {
   const [modal, setModal] = useState(false);
   const [urlImage, setUrlImage] = useState('');
 
-  const ref = createRef();
-
-  // useEffect(() => getRef(createRef()), []);
+  const ref = useRef();
 
   useEffect(() => {
-    if (modal) {
-      window.addEventListener('keydown', closeModal);
-      return;
-    }
-    window.removeEventListener('keydown', closeModal);
-  }, [modal]);
+    getRef(ref);
+    return () => window.addEventListener('keydown', closeModal);
+  }, [modal, getRef]);
 
   const openModal = ({ target }) => {
     const url = target.dataset.largeImg;

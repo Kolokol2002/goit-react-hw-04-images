@@ -6,7 +6,7 @@ export const LoaderContaner = styled.div`
   height: var(--dim);
   position: relative;
   animation: spin988 2s linear infinite;
-  margin: auto;
+  margin: 20px auto;
 
   div {
     --color: #333;

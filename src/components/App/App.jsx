@@ -3,7 +3,7 @@ import Button from 'components/Button';
 import ImageGallery from 'components/ImageGallery';
 import Loader from 'components/Loader';
 import Searchbar from 'components/Searchbar';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 const PER_PAGE = 20;
 
 function App() {
@@ -11,80 +11,60 @@ function App() {
   const [text, setText] = useState('');
   const [page, setPage] = useState(1);
   const [error, setError] = useState('');
-  const [ref, setRef] = useState(null);
   const [status, setStatus] = useState('idle');
 
+  const refItemsImage = useRef(null);
+
   useEffect(() => {
-    if (page === 1) {
+    if (page === 1 || image.length !== PER_PAGE * page) {
       return;
     }
 
-    if (image.length === page * PER_PAGE) {
-      const elementToScroll = ref.current.children[PER_PAGE * (page - 1)];
-      elementToScroll.scrollIntoView({
-        behavior: 'smooth',
-      });
-    }
-  }, [ref, page, image]);
+    const elementToScroll =
+      refItemsImage.current.children[PER_PAGE * (page - 1)];
+    elementToScroll.scrollIntoView({
+      behavior: 'smooth',
+    });
+  }, [image, page]);
 
   useEffect(() => {
-    if (page === 1) {
+    if (text === '') {
       return;
     }
 
-    if (image.length < page * PER_PAGE) {
-      setStatus('pending');
-
-      getPhotoApi(text, page, PER_PAGE)
-        .then(({ data: { hits } }) => {
-          const status = hits.length < PER_PAGE ? 'idle' : 'resolved';
-          setImage([...image, ...hits]);
-          setStatus(status);
-        })
-        .catch(error => {
-          setError(error);
-          setStatus('rejected');
-        });
-    }
-  }, [page, text, image]);
-
-  const getRef = ref => {
-    setRef(ref);
-  };
-
-  const sendPhoto = text => {
-    setImage([]);
     setStatus('pending');
-    setPage(1);
-
     getPhotoApi(text, page, PER_PAGE)
       .then(({ data: { hits } }) => {
-        if (hits.length === 0) {
+        if (!hits.length) {
           throw new Error('Картинок не знайдено');
         }
-
         const status = hits.length < PER_PAGE ? 'idle' : 'resolved';
-
-        setImage(hits);
-        setText(text);
+        setImage(s => [...s, ...hits]);
         setStatus(status);
       })
-      .catch(({ message }) => {
-        setError(message);
+      .catch(error => {
+        setError(error.message);
         setStatus('rejected');
-      });
-  };
+      })
+      .finally(() => {});
+  }, [text, page]);
 
-  const loadMore = () => {
-    setPage(s => s + 1);
+  const sendPhoto = text => {
+    setText(s => {
+      if (s !== text) {
+        setPage(1);
+        setImage([]);
+      }
+      return text;
+    });
   };
 
   return (
     <>
       <Searchbar sendPhoto={sendPhoto} />
-      <ImageGallery image={image} getRef={getRef} />
+      <ImageGallery image={image} refItemsImage={refItemsImage} />
       {status === 'pending' && <Loader />}
-      {status === 'resolved' && <Button onClick={loadMore} />}
+      {status === 'resolved' && <Button onClick={() => setPage(s => s + 1)} />}
       {status === 'rejected' && <h1>{error}</h1>}
     </>
   );
